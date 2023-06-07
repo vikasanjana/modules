@@ -1,0 +1,45 @@
+jQuery( function($){
+	// on upload button click
+	$( 'body' ).on( 'click', '.rudr-upload', function( event ){
+		event.preventDefault(); 
+		
+		const button = $(this)
+		const imageId = button.next().next().val();
+		const variation_id = button.data('product_variation_id');
+		const customUploader = wp.media({
+			title: 'Insert image', 
+			library : {
+				type : 'image'
+			},
+			button: {
+				text: 'Use this image' 
+			},
+			multiple: false
+		}).on( 'select', function() { 
+			const attachment = customUploader.state().get( 'selection' ).first().toJSON();
+			jQuery('ul#gallery-images-'+variation_id).append('<li class="image"><input class="wvg_variation_id_input" type="hidden" name="woo_variation_gallery['+variation_id+'][]" value="'+attachment.id+'"><img width="150px" src="' + attachment.url + '"><a href="#" class="rudr-remove delete remove-woo-variation-gallery-image"><span class="dashicons dashicons-trash"></span></a></li>');
+			jQuery('input[name="woo_variation_gallery['+variation_id+'][]"]').trigger('change');
+		})
+		
+		// already selected images
+		customUploader.on( 'open', function() {
+
+			if( imageId ) {
+			  const selection = customUploader.state().get( 'selection' )
+			  attachment = wp.media.attachment( imageId );
+			  attachment.fetch();
+			  selection.add( attachment ? [attachment] : [] );
+			}
+			 
+		})
+		customUploader.open()
+	
+	});
+	// on remove button click
+	$( 'body' ).on( 'click', '.rudr-remove', function( event ){
+		event.preventDefault();
+		const button = $(this);
+		button.parent().remove();
+		jQuery('.wvg_variation_id_input').trigger('change');
+	});
+});
