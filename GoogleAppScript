@@ -1,0 +1,74 @@
+function onEdit(e) {
+  // Get the active spreadsheet
+  var spreadsheet = e.source;
+
+
+  // Get the active sheet
+  var sheet = spreadsheet.getActiveSheet();
+
+  // Define the webhook URL where you want to send data
+  var webhookUrl = "https://updatedfurniture.store/wp-json/gsheet-update/v1/update-sheet";
+  // var webhookUrl = "https://webhook.site/09babc21-8c02-4fc2-b322-688a0938f051";
+
+  // Check if the edit occurred in the specific sheet you want to monitor
+  var sheetNameToMonitor = "UPLOAD"; // Change to the name of your sheet
+  if (sheet.getName() === sheetNameToMonitor) {
+    var editedRange = e.range;
+
+    // Get the column number of the edited cell (assuming it's a single cell)
+    var editedColumn = editedRange.getColumn();
+
+    // Get the row number of the edited cell
+    var editedRow = editedRange.getRow();
+
+    // Get the values of all cells in the edited range
+    var editedValues = editedRange.getValues();
+
+    // Loop through the rows of edited values
+    for (var i = 0; i < editedValues.length; i++) {
+      // Get the edited value for this row
+      var rowValues = editedValues[i];
+
+
+      // Get the value in column A for the edited row
+      var columnAValue = sheet.getRange(editedRow + i, 1).getValue();
+
+      // Prepare the data to send to the webhook for each edited cell in the row
+      for (var j = 0; j < rowValues.length; j++) {
+        var editedValue = rowValues[j];
+
+        // Get the value in the same column but in the first row (heading row)
+        var headingValue = sheet.getRange(1, editedColumn + j).getValue();
+
+
+        // Prepare the data to send to the webhook
+        var dataToSend = {
+          sheetName: sheet.getName(),
+          editedColumn: editedColumn + j, // Adjust the column number based on the inner loop index
+          editedRow: editedRow + i,
+          editedValue: editedValue,
+          headingValue: headingValue,
+          sku: columnAValue
+        };
+
+        // Send the data to the webhook using a POST request
+        sendToWebhook(webhookUrl, dataToSend);
+      }
+    }
+  }
+}
+
+function sendToWebhook(url, data) {
+  var payload = JSON.stringify(data);
+  var options = {
+    method: "post",
+    contentType: "application/json",
+    payload: payload
+  };
+
+  // Send the data to the webhook
+  var response = UrlFetchApp.fetch(url, options);
+
+  // Log the response (for debugging purposes)
+  Logger.log("Webhook response: " + response.getContentText());
+}
